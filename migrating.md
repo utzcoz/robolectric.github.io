@@ -6,6 +6,42 @@ order: 7
 toc: true
 ---
 
+## Automated Migration
+
+Robolectric provides an automated migration tool to help keep your test suite up to date with Robolectric API changes. It's based on [Error Prone](https://errorprone.info/docs/patching)'s refactoring tools.
+
+1. [Configure your project](https://errorprone.info/docs/installation) to compile using Error Prone. Quick config for Gradle:
+
+```groovy
+plugins {
+    id "net.ltgt.errorprone" version "0.6"
+}
+dependencies {
+    errorprone "com.google.errorprone:error_prone_core:2.3.1" 
+    errorproneJavac "com.google.errorprone:javac:9+181-r4173-1"
+
+    errorprone "org.robolectric:errorprone:{{ site.robolectric.version.preview | escape }}"
+}
+#
+```
+
+## Migrating from 3.8 to 4.0
+
+### Call Android API methods on framework objects, not their shadows
+
+Prior to 4.0, it was possible (but ill-advised) to get the shadow for an Android framework object and invoke framework methods there. This could result in unexpected behavior (e.g. code in overridden methods in subclasses wouldn't be called). Shadow implementation methods are now marked `protected` to guard against this. Always invoke framework methods directly on the Android class.
+
+| 3.8                                                     | 3.6                                                            |
+| ------------------------------------------------------- | -------------------------------------------------------------- |
+| `shadowOf(activity).finish();`                          | `activity.finish()`                                            |
+| `ShadowSystemClock.currentTimeMillis();`                | `SystemClock.currentTimeMillis();`                             |
+
+
+
+| 3.8                                                     | 3.6                                                            |
+| ------------------------------------------------------- | -------------------------------------------------------------- |
+| `Application application =`<br/>`  ShadowApplication.getApplicationContext();` | `Application application =`<br/>`  RuntimeEnvironment.application;` |
+
 ## Migrating from 3.5 to 3.6
 
 Previously Robolectric's Display and DisplayMetrics dimensions defaulted to 480px x 800px, regardless of screen size and density. Now they match the requested configuration, which defaults to 320dp x 470dp mdpi. Tests which rely on the old dimensions for layouts, pixel math, etc. can be modified for new dimensions, or by pinning them to the old size: `@Config(qualifiers = "w480dp-h800dp")`.
